@@ -1,0 +1,6 @@
+#ifndef PH_SENSOR_H
+#define PH_SENSOR_H
+
+float readPH();
+
+#endif
