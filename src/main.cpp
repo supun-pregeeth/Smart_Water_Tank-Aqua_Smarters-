@@ -4,11 +4,13 @@
 #include "tds_sensor.h"
 #include "turbidity_sensor.h"
 #include "time.h" 
+
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 19800;  // your timezone offset in seconds (GMT+5:30)
 const int daylightOffset_sec = 0;
 
 void setupTime() {
+
     Serial.println("Step 0: Synchronizing time with NTP...");
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
@@ -49,6 +51,7 @@ void loop() {
         json.add("turbidity", turbidity);
 
         Serial.println("Step 5: Sending data to Firebase...");
+        
         if (signupOK && Firebase.RTDB.setJSON(&fbdo, "/water_quality", &json)) {
             Serial.println("✅ Data uploaded successfully!");
         } else {
