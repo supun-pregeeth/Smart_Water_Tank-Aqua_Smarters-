@@ -4,6 +4,9 @@
 #include "tds_sensor.h"
 #include "turbidity_sensor.h"
 #include "time.h" 
+#include "flow_sensor.h"
+#include "ultrasonic_sensor.h"
+
 
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 19800; // GMT+5:30
@@ -12,11 +15,15 @@ const int daylightOffset_sec = 0;
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
 
-const unsigned long SENSOR_INTERVAL = 5000;   // 1 second
-const unsigned long UPLOAD_INTERVAL = 10000;   // 5 seconds
+const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
+const unsigned long UPLOAD_INTERVAL = 5000;   // 5 seconds
 
 float latestTDS = 0.0;
 float latestTurbidity = 0.0;
+float latestFlowRate = 0.0;   
+float totalVolume = 0.0;  
+float latestWaterLevel = 0.0;
+FlowSensor flow;
 
 void setupTime() {
     Serial.println("Step 0: Synchronizing time with NTP...");
@@ -38,6 +45,9 @@ void setupTime() {
 
 void setup() {
     Serial.begin(115200);
+
+    ultrasonicInit();
+
     Serial.println("------ SYSTEM START ------");
 
     Serial.println("Step 1: Connecting to WiFi...");
@@ -56,9 +66,21 @@ void loop() {
     // --- Read sensors every 1 second ---
     if (currentMillis - prevSensorMillis >= SENSOR_INTERVAL) {
         prevSensorMillis = currentMillis;
+
+
         latestTDS = readTDS();
         latestTurbidity = readTurbidity();
-        Serial.printf("Sensor Readings -> TDS: %.2f ppm, Turbidity: %.2f\n", latestTDS, latestTurbidity);
+        latestFlowRate = flow.readFlow();
+        totalVolume = flow.getTotalVolume();
+        latestWaterLevel = readWaterLevelCM();
+
+
+        Serial.printf("TDS: %.2f ppm\n", latestTDS);
+        Serial.printf("Turbidity: %.2f NTU\n", latestTurbidity);
+        Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
+        Serial.printf("Total Volume: %.2f L\n", totalVolume);
+        Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
+
     }
 
     // --- Upload to Firebase every 5 seconds ---
@@ -69,6 +91,9 @@ void loop() {
             FirebaseJson json;
             json.add("tds", latestTDS);
             json.add("turbidity", latestTurbidity);
+            json.add("flow_rate", latestFlowRate);
+            json.add("total_volume", totalVolume);
+            
 
             Serial.println("Uploading data to Firebase...");
             if (Firebase.RTDB.setJSON(&fbdo, "/water_quality", &json)) {

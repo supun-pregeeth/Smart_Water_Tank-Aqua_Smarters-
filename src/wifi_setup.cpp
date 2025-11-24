@@ -1,8 +1,8 @@
 #include <WiFi.h>
 #include "wifi_setup.h"
 
-#define WIFI_SSID "EG 22-0578"
-#define WIFI_PASSWORD "Wasantha2@"
+#define WIFI_SSID "Galaxy A13 00F4"
+#define WIFI_PASSWORD "elfv3871"
 
 void connectToWiFi() {
     WiFi.mode(WIFI_STA);
