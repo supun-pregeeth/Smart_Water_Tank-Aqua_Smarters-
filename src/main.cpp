@@ -15,8 +15,8 @@ const int daylightOffset_sec = 0;
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
 
-const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
-const unsigned long UPLOAD_INTERVAL = 5000;   // 5 seconds
+const unsigned long SENSOR_INTERVAL = 5000;   // 1 second
+const unsigned long UPLOAD_INTERVAL = 10000;   // 5 seconds
 
 float latestTDS = 0.0;
 float latestTurbidity = 0.0;
@@ -75,11 +75,13 @@ void loop() {
         latestWaterLevel = readWaterLevelCM();
 
 
+        Serial.printf("------------------------------------------------------\n");
         Serial.printf("TDS: %.2f ppm\n", latestTDS);
         Serial.printf("Turbidity: %.2f NTU\n", latestTurbidity);
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
         Serial.printf("Total Volume: %.2f L\n", totalVolume);
         Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
+        Serial.printf("TDS: %.2f ppm\n", latestTDS);
 
     }
 
@@ -93,7 +95,7 @@ void loop() {
             json.add("turbidity", latestTurbidity);
             json.add("flow_rate", latestFlowRate);
             json.add("total_volume", totalVolume);
-            
+            json.add("Water_Level", latestWaterLevel);
 
             Serial.println("Uploading data to Firebase...");
             if (Firebase.RTDB.setJSON(&fbdo, "/water_quality", &json)) {
