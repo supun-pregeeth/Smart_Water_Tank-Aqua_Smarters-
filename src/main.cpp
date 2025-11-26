@@ -6,6 +6,7 @@
 #include "time.h" 
 #include "flow_sensor.h"
 #include "ultrasonic_sensor.h"
+#include "solenoid_valve.h"
 
 
 const char* ntpServer = "pool.ntp.org";
@@ -14,7 +15,7 @@ const int daylightOffset_sec = 0;
 
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
-
+SolenoidValve valve(13);
 const unsigned long SENSOR_INTERVAL = 5000;   // 1 second
 const unsigned long UPLOAD_INTERVAL = 10000;   // 5 seconds
 
@@ -47,6 +48,7 @@ void setup() {
     Serial.begin(115200);
 
     ultrasonicInit();
+    valve.begin();
 
     Serial.println("------ SYSTEM START ------");
 
@@ -62,6 +64,11 @@ void setup() {
 
 void loop() {
     unsigned long currentMillis = millis();
+    
+    // Let the solenoid module handle the logic
+    valve.update(latestWaterLevel);
+
+    delay(1000);
 
     // --- Read sensors every 1 second ---
     if (currentMillis - prevSensorMillis >= SENSOR_INTERVAL) {
