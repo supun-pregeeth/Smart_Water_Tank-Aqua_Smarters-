@@ -15,7 +15,6 @@ const int daylightOffset_sec = 0;
 
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
-SolenoidValve valve(13);
 const unsigned long SENSOR_INTERVAL = 5000;   // 1 second
 const unsigned long UPLOAD_INTERVAL = 10000;   // 5 seconds
 
@@ -26,7 +25,27 @@ float totalVolume = 0.0;
 float latestWaterLevel = 0.0;
 FlowSensor flow;
 
+void printCurrentTime() {
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo)) {
+        Serial.println("Failed to get time");
+        return;
+    }
+
+    Serial.printf("Current Time: %02d:%02d:%02d\n",
+                  timeinfo.tm_hour,
+                  timeinfo.tm_min,
+                  timeinfo.tm_sec);
+
+    Serial.printf("Date: %02d-%02d-%04d\n",
+                  timeinfo.tm_mday,
+                  timeinfo.tm_mon + 1,
+                  timeinfo.tm_year + 1900);
+}
+
+
 void setupTime() {
+    
     Serial.println("Step 0: Synchronizing time with NTP...");
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
@@ -46,9 +65,7 @@ void setupTime() {
 
 void setup() {
     Serial.begin(115200);
-
     ultrasonicInit();
-    valve.begin();
 
     Serial.println("------ SYSTEM START ------");
 
@@ -58,6 +75,9 @@ void setup() {
     Serial.println("Step 2: Synchronizing time with NTP...");
     setupTime();
 
+    Serial.println("Step 2.1: Current Time after NTP sync:");
+    printCurrentTime();
+
     Serial.println("Step 3: Setting up Firebase...");
     setupFirebase();
 }
@@ -65,10 +85,6 @@ void setup() {
 void loop() {
     unsigned long currentMillis = millis();
     
-    // Let the solenoid module handle the logic
-    valve.update(latestWaterLevel);
-
-    delay(1000);
 
     // --- Read sensors every 1 second ---
     if (currentMillis - prevSensorMillis >= SENSOR_INTERVAL) {
@@ -88,7 +104,6 @@ void loop() {
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
         Serial.printf("Total Volume: %.2f L\n", totalVolume);
         Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
-        Serial.printf("TDS: %.2f ppm\n", latestTDS);
 
     }
 
@@ -105,7 +120,7 @@ void loop() {
             json.add("Water_Level", latestWaterLevel);
 
             Serial.println("Uploading data to Firebase...");
-            if (Firebase.RTDB.setJSON(&fbdo, "/water_quality", &json)) {
+            if (Firebase.RTDB.setJSON(&fbdo, "/Water_quality/Aqua_Smatters", &json)) {
                 Serial.println("✅ Data uploaded successfully!");
             } else {
                 Serial.print("❌ Firebase upload failed: ");
