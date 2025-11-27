@@ -15,14 +15,15 @@ const int daylightOffset_sec = 0;
 
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
-const unsigned long SENSOR_INTERVAL = 5000;   // 1 second
-const unsigned long UPLOAD_INTERVAL = 10000;   // 5 seconds
+const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
+const unsigned long UPLOAD_INTERVAL = 5000;   // 5 seconds
 
 float latestTDS = 0.0;
 float latestTurbidity = 0.0;
 float latestFlowRate = 0.0;   
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
+
 FlowSensor flow;
 
 
@@ -46,7 +47,7 @@ void setupTime() {
     Serial.println(" ✔ Time synchronized");
 
     struct tm *timeinfo = localtime(&now);  // convert to local time
-    
+
     Serial.print("Current Date & Time: ");
     Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\n",
               timeinfo->tm_year + 1900,  // year

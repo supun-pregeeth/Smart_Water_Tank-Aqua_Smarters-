@@ -25,16 +25,22 @@ float FlowSensor::readFlow() {
     unsigned long dt = now - lastTime;
     if (dt == 0) return 0.0;
 
-    float freq = pulseCount * (1000.0 / dt);
-    float flowRate = freq / calibrationFactor;
-
-    totalLiters += flowRate * (dt / 60000.0);
-
+    uint32_t count;
+    noInterrupts();
+    count = pulseCount;
     pulseCount = 0;
+    interrupts();
+
+    float freq = count * (1000.0f / dt); // Hz
+    float flowRate = freq / calibrationFactor; // L/min
+    totalLiters += flowRate * (dt / 60000.0f); // L
+
     lastTime = now;
 
     return flowRate;
 }
+
+
 
 float FlowSensor::getTotalVolume() {
     return totalLiters;
