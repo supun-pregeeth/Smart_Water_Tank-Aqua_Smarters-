@@ -25,33 +25,16 @@ float totalVolume = 0.0;
 float latestWaterLevel = 0.0;
 FlowSensor flow;
 
-void printCurrentTime() {
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo)) {
-        Serial.println("Failed to get time");
-        return;
-    }
-
-    Serial.printf("Current Time: %02d:%02d:%02d\n",
-                  timeinfo.tm_hour,
-                  timeinfo.tm_min,
-                  timeinfo.tm_sec);
-
-    Serial.printf("Date: %02d-%02d-%04d\n",
-                  timeinfo.tm_mday,
-                  timeinfo.tm_mon + 1,
-                  timeinfo.tm_year + 1900);
-}
-
 
 void setupTime() {
     
-    Serial.println("Step 0: Synchronizing time with NTP...");
+    /* Serial.println("Step 0: Synchronizing time with NTP..."); */
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
-    time_t now = time(nullptr);
+    time_t now = time(nullptr); // get NTP time
     int attempts = 0;
     const int maxAttempts = 20;
+
     while (now < 1609459200 && attempts < maxAttempts) {
         delay(500);
         Serial.print(".");
@@ -59,8 +42,24 @@ void setupTime() {
         attempts++;
     }
 
-    if (now >= 1609459200) Serial.println(" ✔ Time synchronized");
-    else Serial.println(" ❌ Time sync failed");
+    if (now >= 1609459200) {
+    Serial.println(" ✔ Time synchronized");
+
+    struct tm *timeinfo = localtime(&now);  // convert to local time
+    
+    Serial.print("Current Date & Time: ");
+    Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\n",
+              timeinfo->tm_year + 1900,  // year
+              timeinfo->tm_mon + 1,      // month
+              timeinfo->tm_mday,         // day
+              timeinfo->tm_hour,         // hour
+              timeinfo->tm_min,          // minute
+              timeinfo->tm_sec);         // second
+
+}
+    else {
+    Serial.println(" ❌ Time sync failed");
+    }
 }
 
 void setup() {
@@ -74,9 +73,6 @@ void setup() {
 
     Serial.println("Step 2: Synchronizing time with NTP...");
     setupTime();
-
-    Serial.println("Step 2.1: Current Time after NTP sync:");
-    printCurrentTime();
 
     Serial.println("Step 3: Setting up Firebase...");
     setupFirebase();
