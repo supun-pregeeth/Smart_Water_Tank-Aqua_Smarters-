@@ -8,21 +8,26 @@
 #include "ultrasonic_sensor.h"
 #include "solenoid_valve.h"
 
-
+// -------------------- NTP & Time --------------------
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 19800; // GMT+5:30
 const int daylightOffset_sec = 0;
 
+
+// -------------------- Sensor & Upload Timing --------------------
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
-const unsigned long SENSOR_INTERVAL = 5000;   // 1 second
-const unsigned long UPLOAD_INTERVAL = 10000;   // 5 seconds
+const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
+const unsigned long UPLOAD_INTERVAL = 5000;   // 5 seconds
 
+
+// -------------------- Sensor Values --------------------
 float latestTDS = 0.0;
 float latestTurbidity = 0.0;
 float latestFlowRate = 0.0;   
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
+
 FlowSensor flow;
 
 
@@ -46,7 +51,7 @@ void setupTime() {
     Serial.println(" ✔ Time synchronized");
 
     struct tm *timeinfo = localtime(&now);  // convert to local time
-    
+
     Serial.print("Current Date & Time: ");
     Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\n",
               timeinfo->tm_year + 1900,  // year
@@ -63,7 +68,12 @@ void setupTime() {
 }
 
 void setup() {
+
+
     Serial.begin(115200);
+    delay(100);
+
+
     ultrasonicInit();
 
     Serial.println("------ SYSTEM START ------");
@@ -107,6 +117,11 @@ void loop() {
     if (currentMillis - prevUploadMillis >= UPLOAD_INTERVAL) {
         prevUploadMillis = currentMillis;
 
+        Serial.print("Firebase signupOK: ");
+        Serial.println(signupOK);
+        Serial.print("Firebase ready: ");
+        Serial.println(Firebase.ready());
+
         if (signupOK && Firebase.ready()) {
             FirebaseJson json;
             json.add("tds", latestTDS);
@@ -116,7 +131,7 @@ void loop() {
             json.add("Water_Level", latestWaterLevel);
 
             Serial.println("Uploading data to Firebase...");
-            if (Firebase.RTDB.setJSON(&fbdo, "/Water_quality/Aqua_Smatters", &json)) {
+            if (Firebase.RTDB.setJSON(&fbdo, "Water_quality/Aqua_Smatters", &json)) {
                 Serial.println("✅ Data uploaded successfully!");
             } else {
                 Serial.print("❌ Firebase upload failed: ");

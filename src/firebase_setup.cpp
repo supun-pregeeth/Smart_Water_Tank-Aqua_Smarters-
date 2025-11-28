@@ -4,9 +4,9 @@
 #define DATABASE_URL "https://test2-2c043-default-rtdb.firebaseio.com"
 
 
-FirebaseData fbdo;
-FirebaseAuth auth;
-FirebaseConfig config;
+FirebaseData fbdo; //Handles Firebase requests/responses
+FirebaseAuth auth; //Handles authentication data
+FirebaseConfig config; //Stores API key, DB URL, and other config for Firebase
 bool signupOK = false;
 
 void setupFirebase() {
@@ -17,7 +17,15 @@ void setupFirebase() {
 
     Serial.println("Signing in to Firebase anonymously...");
     
-    if (Firebase.signUp(&config, &auth, "", "")) {
+    //Store token using auth
+
+
+    //➡️ Sends signup request to Firebase
+    //➡️ Firebase creates anonymous user
+    //➡️ Firebase returns UID, ID token, refresh token
+    //➡️ Tokens are stored inside auth
+    //➡️ Function returns true if successful
+    if (Firebase.signUp(&config, &auth, "", "")) { //Create token using signup method
         Serial.println("✅ Firebase authentication successful!");
         signupOK = true;
     } else {
@@ -25,8 +33,8 @@ void setupFirebase() {
         signupOK = false;
     }
 
-    Firebase.begin(&config, &auth);
-    Firebase.reconnectWiFi(true);
+    Firebase.begin(&config, &auth); //Use token from auth
+    Firebase.reconnectWiFi(true); //Enable auto reconnect
 
     Serial.println("Firebase setup completed ✔");
 }
