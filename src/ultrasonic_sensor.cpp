@@ -16,6 +16,7 @@ float readDistanceCM() {
     digitalWrite(TRIG_PIN, LOW);
 
     long duration = pulseIn(ECHO_PIN, HIGH, 30000); // 30ms timeout
+    
     if (duration == 0) return -1; // no echo
 
     float distance = duration * 0.0343 / 2.0; // cm
