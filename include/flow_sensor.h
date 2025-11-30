@@ -3,21 +3,18 @@
 
 #include <Arduino.h>
 
-class FlowSensor {
-public:
-    FlowSensor(uint8_t pin = 12, float calFactor = 7.5);
+// Pins & calibration
+extern uint8_t flowPin;
+extern float calibrationFactor;
 
-    float readFlow();         // Returns flow rate (L/min)
-    float getTotalVolume();   // Returns total volume (L)
+// Flow sensor state
+extern volatile uint32_t pulses;
+extern unsigned long lastTime;
+extern float totalLiters;
 
-private:
-    static void IRAM_ATTR pulseISR();  // Interrupt function
-    static volatile uint32_t pulses;   // Pulse counter (shared)
-
-    uint8_t sensorPin;
-    float calibrationFactor;
-    unsigned long lastTime;
-    float totalLiters;
-};
+// Functions
+void flowSensorInit(uint8_t pin = 18, float calFactor = 7.5);
+float readFlow();          // Returns flow rate in L/min
+float getTotalVolume();    // Returns total liters
 
 #endif

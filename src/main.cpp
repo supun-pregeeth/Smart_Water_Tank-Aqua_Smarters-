@@ -28,9 +28,6 @@ float latestFlowRate = 0.0;
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
 
-FlowSensor flow;
-
-
 void setupTime() {
     
     /* Serial.println("Step 0: Synchronizing time with NTP..."); */
@@ -68,12 +65,11 @@ void setupTime() {
 }
 
 void setup() {
-
-
+    
     Serial.begin(115200);
     delay(100);
 
-
+    // Initialize sensors
     ultrasonicInit();
 
     Serial.println("------ SYSTEM START ------");
@@ -86,6 +82,17 @@ void setup() {
 
     Serial.println("Step 3: Setting up Firebase...");
     setupFirebase();
+
+    Serial.println("Step 4: Initializing flow sensor...");
+    flowSensorInit(12, 7.5);   // or your pin + calibration
+
+
+    // Print authentication info for debugging
+    Serial.print("Signup OK: "); Serial.println(signupOK);
+if (signupOK) {
+    Serial.print("Auth UID: "); Serial.println(auth.token.uid.c_str());
+}
+
 }
 
 void loop() {
@@ -99,17 +106,17 @@ void loop() {
 
         latestTDS = readTDS();
         latestTurbidity = readTurbidity();
-        latestFlowRate = flow.readFlow();
-        totalVolume = flow.getTotalVolume();
         latestWaterLevel = readWaterLevelCM();
+        latestFlowRate = readFlow();
+        totalVolume = getTotalVolume();
 
 
         Serial.printf("------------------------------------------------------\n");
         Serial.printf("TDS: %.2f ppm\n", latestTDS);
         Serial.printf("Turbidity: %.2f NTU\n", latestTurbidity);
+        Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
         Serial.printf("Total Volume: %.2f L\n", totalVolume);
-        Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
 
     }
 
@@ -122,7 +129,7 @@ void loop() {
         Serial.print("Firebase ready: ");
         Serial.println(Firebase.ready());
 
-        if (signupOK && Firebase.ready()) {
+        if (WiFi.status() == WL_CONNECTED && signupOK && Firebase.ready()) {
             FirebaseJson json;
             json.add("tds", latestTDS);
             json.add("turbidity", latestTurbidity);
