@@ -2,7 +2,7 @@
 #include "wifi_setup.h" //function declarations
 
 #define WIFI_SSID "Pixel_9268"
-#define WIFI_PASSWORD "057816222"
+#define WIFI_PASSWORD "iloveyou"
 
 void connectToWiFi() {
 
