@@ -13,13 +13,12 @@ const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 19800; // GMT+5:30
 const int daylightOffset_sec = 0;
 
-
 // -------------------- Sensor & Upload Timing --------------------
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
 const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
 const unsigned long UPLOAD_INTERVAL = 5000;   // 5 seconds
-
+ 
 
 // -------------------- Sensor Values --------------------
 float latestTDS = 0.0;
@@ -67,7 +66,7 @@ void setupTime() {
 void setup() {
     
     Serial.begin(115200);
-    delay(100);
+    delay(500);
 
     // Initialize sensors
     ultrasonicInit();
@@ -84,21 +83,14 @@ void setup() {
     setupFirebase();
 
     Serial.println("Step 4: Initializing flow sensor...");
-    flowSensorInit(12, 7.5);   // or your pin + calibration
-
-
-    // Print authentication info for debugging
-    Serial.print("Signup OK: "); Serial.println(signupOK);
-if (signupOK) {
-    Serial.print("Auth UID: "); Serial.println(auth.token.uid.c_str());
-}
+    flowSensorInit( 23, 421.0);  // Pin 23, Calibration factor 421.0 pulses per liter
 
 }
 
 void loop() {
     unsigned long currentMillis = millis();
-    
 
+  
     // --- Read sensors every 1 second ---
     if (currentMillis - prevSensorMillis >= SENSOR_INTERVAL) {
         prevSensorMillis = currentMillis;
@@ -108,7 +100,7 @@ void loop() {
         latestTurbidity = readTurbidity();
         latestWaterLevel = readWaterLevelCM();
         latestFlowRate = readFlow();
-        totalVolume = getTotalVolume();
+        uint32_t totalVolume = getTotalVolume(); 
 
 
         Serial.printf("------------------------------------------------------\n");
@@ -117,6 +109,13 @@ void loop() {
         Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
         Serial.printf("Total Volume: %.2f L\n", totalVolume);
+        
+
+          uint32_t totalCount = getTotalPulses();
+    
+
+    Serial.print("   Total pulses: ");
+    Serial.println(totalPulses);
 
     }
 
@@ -136,6 +135,7 @@ void loop() {
             json.add("flow_rate", latestFlowRate);
             json.add("total_volume", totalVolume);
             json.add("Water_Level", latestWaterLevel);
+            json.add("total_pulses", getTotalPulses());
 
             Serial.println("Uploading data to Firebase...");
             if (Firebase.RTDB.setJSON(&fbdo, "Water_quality/Aqua_Smatters", &json)) {

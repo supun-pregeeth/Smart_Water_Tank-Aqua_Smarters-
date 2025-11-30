@@ -11,7 +11,7 @@ void connectToWiFi() {
 
     Serial.print("Connecting to WiFi");
     int attempts = 0; //WiFi.status() = WL_DISCONNECTED/WL_CONNECTED/WL_CONNECT_FAILED/WL_CONNECTION_LOST/WL_NO_SSID_AVAIL
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+    while (WiFi.status() != WL_CONNECTED && attempts < 50) {
         Serial.print(".");
         delay(500);
         attempts++;

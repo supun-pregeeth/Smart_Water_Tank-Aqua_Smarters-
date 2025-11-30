@@ -9,12 +9,15 @@ extern float calibrationFactor;
 
 // Flow sensor state
 extern volatile uint32_t pulses;
+/* volatile uint32_t totalPulses ; */
+extern uint32_t totalPulses;
 extern unsigned long lastTime;
 extern float totalLiters;
 
 // Functions
-void flowSensorInit(uint8_t pin = 18, float calFactor = 7.5);
+void flowSensorInit( uint8_t flowPin, float calibrationFactor); // Initialize flow sensor
 float readFlow();          // Returns flow rate in L/min
 float getTotalVolume();    // Returns total liters
+float getTotalPulses();    // Returns total pulse count
 
 #endif
