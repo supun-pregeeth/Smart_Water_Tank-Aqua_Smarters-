@@ -1,18 +1,21 @@
 #ifndef SOLENOID_VALVE_H
 #define SOLENOID_VALVE_H
 
-class SolenoidValve {
-  private:
-    int relayPin;
-    bool state;
+#include <Arduino.h>
 
-  public:
-    SolenoidValve(int pin);         // Constructor
-    void begin();                   // Initialize relay pin
-    void open();                    // Turn solenoid ON
-    void close();                   // Turn solenoid OFF
-    bool isOpen();                  // Check current state
-    void update(float waterLevel);  // Control valve based on water level
-};
+// Initializes the solenoid valve pin
+void solenoidInit(int pin);
+
+// Turn ON the solenoid valve
+void solenoidOn();
+
+// Turn OFF the solenoid valve
+void solenoidOff();
+
+// Get current solenoid status (1 = ON, 0 = OFF)
+int getSolenoidState();
+
+// Optional: Control solenoid using Firebase (if needed)
+void solenoidFirebaseControl();
 
 #endif
