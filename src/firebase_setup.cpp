@@ -1,7 +1,7 @@
 #include "firebase_setup.h"
 
 #define API_KEY "AIzaSyCKZolSWzhB-cDVnJX6G1gGAx40ltYbh74"
-#define DATABASE_URL "https://test2-2c043-default-rtdb.firebaseio.com"
+#define DATABASE_URL "https://test1-69fa1-default-rtdb.firebaseio.com"
 
 
 FirebaseData fbdo; //Handles Firebase requests/responses

@@ -26,6 +26,7 @@ float latestTurbidity = 0.0;
 float latestFlowRate = 0.0;   
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
+int solenoidValue = 0;
 
 void setupTime() {
     
@@ -68,9 +69,6 @@ void setup() {
     Serial.begin(115200);
     delay(500);
 
-    // Initialize sensors
-    ultrasonicInit();
-
     Serial.println("------ SYSTEM START ------");
 
     Serial.println("Step 1: Connecting to WiFi...");
@@ -83,11 +81,20 @@ void setup() {
     setupFirebase();
 
     Serial.println("Step 4: Initializing flow sensor...");
-    flowSensorInit( 23, 421.0);  // Pin 23, Calibration factor 421.0 pulses per liter
+    flowSensorInit( 23,390.0);
+
+    Serial.println("Step 5: Initializing solenoid valve...");
+    solenoidInit(5);
+
+    Serial.println("Step 6: Initializing ultrasonic sensors...");
+    ultrasonicInit();
 
 }
 
 void loop() {
+
+    solenoidValue = getSolenoidState();
+
     unsigned long currentMillis = millis();
 
   
@@ -100,24 +107,23 @@ void loop() {
         latestTurbidity = readTurbidity();
         latestWaterLevel = readWaterLevelCM();
         latestFlowRate = readFlow();
-        uint32_t totalVolume = getTotalVolume(); 
-
-
+        uint32_t totalVolume = getTotalVolume();
+        uint32_t totalCount = getTotalPulses();
+        
+        
+        /* solenoidFirebaseControl(); */   // <-- NEW: Firebase controls relay
+        
         Serial.printf("------------------------------------------------------\n");
         Serial.printf("TDS: %.2f ppm\n", latestTDS);
         Serial.printf("Turbidity: %.2f NTU\n", latestTurbidity);
         Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
         Serial.printf("Total Volume: %.2f L\n", totalVolume);
+        Serial.print("Total Count: ");
+        Serial.println(totalCount);
+        Serial.printf("Solenoid State: %s\n", solenoidValue ? "ON" : "OFF");
         
-
-          uint32_t totalCount = getTotalPulses();
-    
-
-    Serial.print("   Total pulses: ");
-    Serial.println(totalPulses);
-
-    }
+        }
 
     // --- Upload to Firebase every 5 seconds ---
     if (currentMillis - prevUploadMillis >= UPLOAD_INTERVAL) {
@@ -130,12 +136,14 @@ void loop() {
 
         if (WiFi.status() == WL_CONNECTED && signupOK && Firebase.ready()) {
             FirebaseJson json;
+
             json.add("tds", latestTDS);
             json.add("turbidity", latestTurbidity);
             json.add("flow_rate", latestFlowRate);
             json.add("total_volume", totalVolume);
             json.add("Water_Level", latestWaterLevel);
             json.add("total_pulses", getTotalPulses());
+            json.add("solenoid", solenoidValue);
 
             Serial.println("Uploading data to Firebase...");
             if (Firebase.RTDB.setJSON(&fbdo, "Water_quality/Aqua_Smatters", &json)) {
@@ -147,5 +155,6 @@ void loop() {
         } else {
             Serial.println("Firebase not ready or authentication failed. Skipping upload.");
         }
+
     }
 }

@@ -1,40 +1,67 @@
 #include "solenoid_valve.h"
-#include <Arduino.h>
+#include <Firebase_ESP_Client.h>
 
-SolenoidValve::SolenoidValve(int pin) {
-    relayPin = pin;
-    state = false;
+// Extern values coming from main code or firebase_setup.cpp
+extern FirebaseData fbdo;
+extern bool signupOK;
+
+// ---------------------------------------------------
+// Variables
+// ---------------------------------------------------
+static int solenoidPin = -1;
+static int solenoidState = 0;   // 0 = OFF, 1 = ON
+
+// ---------------------------------------------------
+// Initialization
+// ---------------------------------------------------
+void solenoidInit(int pin) {
+    solenoidPin = pin;
+    pinMode(solenoidPin, OUTPUT);
+    digitalWrite(solenoidPin, LOW);
+    solenoidState = 1;
+    Serial.println("Solenoid valve initialized.");
 }
 
-void SolenoidValve::begin() {
-    pinMode(relayPin, OUTPUT);
-    digitalWrite(relayPin, LOW); // Default OFF
+// ---------------------------------------------------
+// ON / OFF Functions
+// ---------------------------------------------------
+void solenoidOn() {
+    digitalWrite(solenoidPin, HIGH);
+    solenoidState = 1;
 }
 
-void SolenoidValve::open() {
-    digitalWrite(relayPin, HIGH);
-    state = true;
+void solenoidOff() {
+    digitalWrite(solenoidPin, LOW);
+    solenoidState = 0;
 }
 
-void SolenoidValve::close() {
-    digitalWrite(relayPin, LOW);
-    state = false;
+// ---------------------------------------------------
+// Return current state
+// ---------------------------------------------------
+int getSolenoidState() {
+    return solenoidState;
 }
 
-bool SolenoidValve::isOpen() {
-    return state;
-}
+// ---------------------------------------------------
+// Firebase Remote Control
+// Path: Water_quality/Aqua_Smatters/solenoid
+// value: 1 = ON, 0 = OFF
+// ---------------------------------------------------
+void solenoidFirebaseControl() {
+    if (!signupOK || !Firebase.ready()) return;
 
-// --- New function to control valve based on water level ---
-void SolenoidValve::update(float waterLevel) {
-    if (waterLevel < 50.0 && !state) {
-        open();
-        Serial.println("Solenoid Valve OPENED");
-    } 
-    else if (waterLevel >= 50.0 && state) {
-        close();
-        Serial.println("Solenoid Valve CLOSED");
+    int firebaseValue = 0;
+
+    if (Firebase.RTDB.getInt(&fbdo, "Water_quality/Aqua_Smatters/solenoid")) {
+        firebaseValue = fbdo.intData();
+
+        if (firebaseValue == 1) {
+            solenoidOn();
+        } else {
+            solenoidOff();
+        }
+    } else {
+        Serial.print("Failed to read solenoid value: ");
+        Serial.println(fbdo.errorReason());
     }
-
-    Serial.printf("Current Water Level: %.2f cm\n", waterLevel);
 }
