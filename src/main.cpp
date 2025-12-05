@@ -107,7 +107,7 @@ void loop() {
         latestTurbidity = readTurbidity();
         latestWaterLevel = readWaterLevelCM();
         latestFlowRate = readFlow();
-        uint32_t totalVolume = getTotalVolume();
+        uint32_t totalVolumeNow = getTotalVolume();
         uint32_t totalCount = getTotalPulses();
         
         
@@ -118,7 +118,7 @@ void loop() {
         Serial.printf("Turbidity: %.2f NTU\n", latestTurbidity);
         Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
-        Serial.printf("Total Volume: %.2f L\n", totalVolume);
+        Serial.printf("Total Volume: %.2f L\n", totalVolumeNow);
         Serial.print("Total Count: ");
         Serial.println(totalCount);
         Serial.printf("Solenoid State: %s\n", solenoidValue ? "ON" : "OFF");
@@ -129,10 +129,8 @@ void loop() {
     if (currentMillis - prevUploadMillis >= UPLOAD_INTERVAL) {
         prevUploadMillis = currentMillis;
 
-        Serial.print("Firebase signupOK: ");
-        Serial.println(signupOK);
-        Serial.print("Firebase ready: ");
-        Serial.println(Firebase.ready());
+        Serial.print("Firebase signupOK: "); Serial.println(signupOK);
+        Serial.print("Firebase ready: "); Serial.println(Firebase.ready());
 
         if (WiFi.status() == WL_CONNECTED && signupOK && Firebase.ready()) {
             FirebaseJson json;
