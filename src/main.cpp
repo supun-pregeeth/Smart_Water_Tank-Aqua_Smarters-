@@ -132,27 +132,38 @@ void loop() {
         Serial.print("Firebase signupOK: "); Serial.println(signupOK);
         Serial.print("Firebase ready: "); Serial.println(Firebase.ready());
 
-        if (WiFi.status() == WL_CONNECTED && signupOK && Firebase.ready()) {
-            FirebaseJson json;
+        if (WiFi.status() == WL_CONNECTED && signupOK && Firebase.ready()) 
+        {
+
+            FirebaseJson dashboardJson;
+            dashboardJson.add("flowRate", latestFlowRate);
+    dashboardJson.add("valveStatus", solenoidValue);
+    dashboardJson.add("waterLevel", latestWaterLevel);
 
             json.add("tds", latestTDS);
             json.add("turbidity", latestTurbidity);
             json.add("flow_rate", latestFlowRate);
             json.add("total_volume", totalVolume);
-            json.add("Water_Level", latestWaterLevel);
+            json.add("waterLevel", latestWaterLevel);
             json.add("total_pulses", getTotalPulses());
             json.add("solenoid", solenoidValue);
 
-            Serial.println("Uploading data to Firebase...");
-            if (Firebase.RTDB.setJSON(&fbdo, "Water_quality/Aqua_Smatters", &json)) {
-                Serial.println("✅ Data uploaded successfully!");
-            } else {
-                Serial.print("❌ Firebase upload failed: ");
-                Serial.println(fbdo.errorReason());
-            }
-        } else {
-            Serial.println("Firebase not ready or authentication failed. Skipping upload.");
-        }
+            String path = "users/";
+            path += String(USER_UID);
+            path += "/dashboard";
+
+            Serial.print("Uploading data to Firebase path: ");
+            Serial.println(path);
+
+    if (Firebase.RTDB.setJSON(&fbdo, path.c_str(), &json)) {
+        Serial.println("✅ Data uploaded successfully!");
+    } else {
+        Serial.print("❌ Firebase upload failed: ");
+        Serial.println(fbdo.errorReason());
+    }
 
     }
 }
+}
+
+// End of file: close loop() scope

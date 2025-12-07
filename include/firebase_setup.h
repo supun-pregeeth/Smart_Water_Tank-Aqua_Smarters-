@@ -3,6 +3,8 @@
 
 #include <Firebase_ESP_Client.h>
 
+#define USER_UID "Nn4S7P4qjsU5lsP4LPPl57dnVEl1" 
+
 // Firebase objects
 extern FirebaseData fbdo;
 extern FirebaseAuth auth;
