@@ -26,7 +26,7 @@ float latestTurbidity = 0.0;
 float latestFlowRate = 0.0;   
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
-int solenoidValue = 0;
+bool solenoidValue = false;
 
 void setupTime() {
     
@@ -93,7 +93,9 @@ void setup() {
 
 void loop() {
 
+    solenoidFirebaseControl();
     solenoidValue = getSolenoidState();
+
 
     unsigned long currentMillis = millis();
 
@@ -137,29 +139,45 @@ void loop() {
 
             FirebaseJson dashboardJson;
             dashboardJson.add("flowRate", latestFlowRate);
-    dashboardJson.add("valveStatus", solenoidValue);
-    dashboardJson.add("waterLevel", latestWaterLevel);
+            dashboardJson.add("valveStatus", solenoidValue);
+            dashboardJson.add("waterLevel", latestWaterLevel);
 
-            json.add("tds", latestTDS);
-            json.add("turbidity", latestTurbidity);
-            json.add("flow_rate", latestFlowRate);
-            json.add("total_volume", totalVolume);
-            json.add("waterLevel", latestWaterLevel);
-            json.add("total_pulses", getTotalPulses());
-            json.add("solenoid", solenoidValue);
+            FirebaseJson qualityJson;
+            qualityJson.add("ph", 7.2);            // replace with sensor reading if available
+            qualityJson.add("tds", latestTDS);
+            qualityJson.add("turbidity", latestTurbidity);
 
-            String path = "users/";
-            path += String(USER_UID);
-            path += "/dashboard";
+
+            /* json.add("total_volume", totalVolume);
+            json.add("total_pulses", getTotalPulses()); */
+            
+
+            String dashboardPath = "users/";
+            dashboardPath += String(USER_UID);
+            dashboardPath += "/dashboard";
+
+            String qualityPath = "users/";
+            qualityPath += String(USER_UID);
+            qualityPath += "/quality";
 
             Serial.print("Uploading data to Firebase path: ");
-            Serial.println(path);
+            Serial.println(dashboardPath);
+            Serial.println(qualityPath);
 
-    if (Firebase.RTDB.setJSON(&fbdo, path.c_str(), &json)) {
-        Serial.println("✅ Data uploaded successfully!");
+    if (Firebase.RTDB.setJSON(&fbdo, dashboardPath.c_str(), &dashboardJson)) {
+        Serial.println("✅ Dashboard uploaded successfully!");
     } else {
-        Serial.print("❌ Firebase upload failed: ");
+        Serial.print("❌ Dashboard upload failed: ");
         Serial.println(fbdo.errorReason());
+    }
+
+    if (Firebase.RTDB.setJSON(&fbdo, qualityPath.c_str(), &qualityJson)) {
+        Serial.println("✅ Quality uploaded successfully!");
+
+    } else {
+         Serial.print("❌ Quality upload failed: ");
+        Serial.println(fbdo.errorReason());
+
     }
 
     }

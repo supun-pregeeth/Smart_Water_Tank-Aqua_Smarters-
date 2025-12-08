@@ -12,8 +12,8 @@ void solenoidOn();
 // Turn OFF the solenoid valve
 void solenoidOff();
 
-// Get current solenoid status (1 = ON, 0 = OFF)
-int getSolenoidState();
+// Get current solenoid status (true = ON, false = OFF)
+bool getSolenoidState();
 
 // Optional: Control solenoid using Firebase (if needed)
 void solenoidFirebaseControl();
