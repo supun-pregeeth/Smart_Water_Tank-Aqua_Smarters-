@@ -1,15 +1,14 @@
 #include "solenoid_valve.h"
 #include <Firebase_ESP_Client.h>
+#include "firebase_setup.h"
 
-// Extern values coming from main code or firebase_setup.cpp
-extern FirebaseData fbdo;
-extern bool signupOK;
+// Firebase externs available via `firebase_setup.h`
 
 // ---------------------------------------------------
 // Variables
 // ---------------------------------------------------
 static int solenoidPin = -1;
-static int solenoidState = 0;   // 0 = OFF, 1 = ON
+static bool solenoidState = false;  // 0 = OFF, 1 = ON
 
 // ---------------------------------------------------
 // Initialization
@@ -18,7 +17,7 @@ void solenoidInit(int pin) {
     solenoidPin = pin;
     pinMode(solenoidPin, OUTPUT);
     digitalWrite(solenoidPin, LOW);
-    solenoidState = 1;
+    solenoidState = false;
     Serial.println("Solenoid valve initialized.");
 }
 
@@ -26,41 +25,66 @@ void solenoidInit(int pin) {
 // ON / OFF Functions
 // ---------------------------------------------------
 void solenoidOn() {
-    digitalWrite(solenoidPin, HIGH);
-    solenoidState = 1;
+    if (!solenoidState) {
+        digitalWrite(solenoidPin, HIGH);
+        solenoidState = true;
+        Serial.println("Solenoid turned ON locally");
+    }
 }
 
 void solenoidOff() {
-    digitalWrite(solenoidPin, LOW);
-    solenoidState = 0;
+    if (solenoidState) {
+        digitalWrite(solenoidPin, LOW);
+        solenoidState = false;
+        Serial.println("Solenoid turned OFF locally");
+    }
 }
 
 // ---------------------------------------------------
 // Return current state
 // ---------------------------------------------------
-int getSolenoidState() {
+bool getSolenoidState(void) {
     return solenoidState;
 }
 
-// ---------------------------------------------------
+// --------------------- ------------------------------
 // Firebase Remote Control
-// Path: Water_quality/Aqua_Smatters/solenoid
-// value: 1 = ON, 0 = OFF
+// Reads valveStatus from dashboard every time this function is called
 // ---------------------------------------------------
 void solenoidFirebaseControl() {
     if (!signupOK || !Firebase.ready()) return;
 
-    int firebaseValue = 0;
+    String solenoidPath = "users/";
+    solenoidPath += String(USER_UID);
+    solenoidPath += "/dashboard/valveStatus";
+    Serial.print("Checking Firebase solenoid path: ");
+    Serial.println(solenoidPath);
 
-    if (Firebase.RTDB.getInt(&fbdo, "Water_quality/Aqua_Smatters/solenoid")) {
-        firebaseValue = fbdo.intData();
+    bool updated = false;
 
-        if (firebaseValue == 1) {
-            solenoidOn();
-        } else {
-            solenoidOff();
-        }
-    } else {
+    // Try to read as boolean
+    if (Firebase.RTDB.getBool(&fbdo, solenoidPath.c_str())) {
+        bool firebaseValue = fbdo.boolData();
+        Serial.print("Firebase valveStatus (bool): ");
+        Serial.println(firebaseValue ? "ON" : "OFF");
+
+        if (firebaseValue) solenoidOn();
+        else solenoidOff();
+        updated = true;
+    }
+
+    // If not boolean, try to read as string (some apps send "true"/"false")
+    if (!updated && Firebase.RTDB.getString(&fbdo, solenoidPath.c_str())) {
+        String firebaseStr = fbdo.stringData();
+        Serial.print("Firebase valveStatus (string): ");
+        Serial.println(firebaseStr);
+
+        if (firebaseStr.equalsIgnoreCase("true")) solenoidOn();
+        else solenoidOff();
+        updated = true;
+    }
+
+    if (!updated) {
         Serial.print("Failed to read solenoid value: ");
         Serial.println(fbdo.errorReason());
     }

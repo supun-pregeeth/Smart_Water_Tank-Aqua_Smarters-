@@ -26,7 +26,7 @@ float latestTurbidity = 0.0;
 float latestFlowRate = 0.0;   
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
-int solenoidValue = 0;
+bool solenoidValue = false;
 
 void setupTime() {
     
@@ -93,7 +93,9 @@ void setup() {
 
 void loop() {
 
+    solenoidFirebaseControl();
     solenoidValue = getSolenoidState();
+
 
     unsigned long currentMillis = millis();
 
@@ -132,27 +134,54 @@ void loop() {
         Serial.print("Firebase signupOK: "); Serial.println(signupOK);
         Serial.print("Firebase ready: "); Serial.println(Firebase.ready());
 
-        if (WiFi.status() == WL_CONNECTED && signupOK && Firebase.ready()) {
-            FirebaseJson json;
+        if (WiFi.status() == WL_CONNECTED && signupOK && Firebase.ready()) 
+        {
 
-            json.add("tds", latestTDS);
-            json.add("turbidity", latestTurbidity);
-            json.add("flow_rate", latestFlowRate);
-            json.add("total_volume", totalVolume);
-            json.add("Water_Level", latestWaterLevel);
-            json.add("total_pulses", getTotalPulses());
-            json.add("solenoid", solenoidValue);
+            FirebaseJson dashboardJson;
+            dashboardJson.add("flowRate", latestFlowRate);
+            dashboardJson.add("valveStatus", solenoidValue);
+            dashboardJson.add("waterLevel", latestWaterLevel);
 
-            Serial.println("Uploading data to Firebase...");
-            if (Firebase.RTDB.setJSON(&fbdo, "Water_quality/Aqua_Smatters", &json)) {
-                Serial.println("✅ Data uploaded successfully!");
-            } else {
-                Serial.print("❌ Firebase upload failed: ");
-                Serial.println(fbdo.errorReason());
-            }
-        } else {
-            Serial.println("Firebase not ready or authentication failed. Skipping upload.");
-        }
+            FirebaseJson qualityJson;
+            qualityJson.add("ph", 7.2);            // replace with sensor reading if available
+            qualityJson.add("tds", latestTDS);
+            qualityJson.add("turbidity", latestTurbidity);
+
+
+            /* json.add("total_volume", totalVolume);
+            json.add("total_pulses", getTotalPulses()); */
+            
+
+            String dashboardPath = "users/";
+            dashboardPath += String(USER_UID);
+            dashboardPath += "/dashboard";
+
+            String qualityPath = "users/";
+            qualityPath += String(USER_UID);
+            qualityPath += "/quality";
+
+            Serial.print("Uploading data to Firebase path: ");
+            Serial.println(dashboardPath);
+            Serial.println(qualityPath);
+
+    if (Firebase.RTDB.setJSON(&fbdo, dashboardPath.c_str(), &dashboardJson)) {
+        Serial.println("✅ Dashboard uploaded successfully!");
+    } else {
+        Serial.print("❌ Dashboard upload failed: ");
+        Serial.println(fbdo.errorReason());
+    }
+
+    if (Firebase.RTDB.setJSON(&fbdo, qualityPath.c_str(), &qualityJson)) {
+        Serial.println("✅ Quality uploaded successfully!");
+
+    } else {
+         Serial.print("❌ Quality upload failed: ");
+        Serial.println(fbdo.errorReason());
+
+    }
 
     }
 }
+}
+
+// End of file: close loop() scope
