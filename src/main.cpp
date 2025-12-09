@@ -7,6 +7,8 @@
 #include "flow_sensor.h"
 #include "ultrasonic_sensor.h"
 #include "solenoid_valve.h"
+#include "ph_sensor.h"
+
 
 // -------------------- NTP & Time --------------------
 const char* ntpServer = "pool.ntp.org";
@@ -18,7 +20,7 @@ unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
 const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
 const unsigned long UPLOAD_INTERVAL = 5000;   // 5 seconds
- 
+
 
 // -------------------- Sensor Values --------------------
 float latestTDS = 0.0;
@@ -27,6 +29,7 @@ float latestFlowRate = 0.0;
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
 bool solenoidValue = false;
+float phValue = 0.0;
 
 void setupTime() {
     
@@ -84,10 +87,14 @@ void setup() {
     flowSensorInit( 23,390.0);
 
     Serial.println("Step 5: Initializing solenoid valve...");
-    solenoidInit(5);
+    solenoidInit(16);
 
     Serial.println("Step 6: Initializing ultrasonic sensors...");
     ultrasonicInit();
+
+    Serial.println("Step 7: Initializing pH sensor...");
+    phInit();
+
 
 }
 
@@ -95,8 +102,7 @@ void loop() {
 
     solenoidFirebaseControl();
     solenoidValue = getSolenoidState();
-
-
+    
     unsigned long currentMillis = millis();
 
   
@@ -104,11 +110,14 @@ void loop() {
     if (currentMillis - prevSensorMillis >= SENSOR_INTERVAL) {
         prevSensorMillis = currentMillis;
 
-
-        latestTDS = readTDS();
+        float tdsReading = readTDS();
+        if ( tdsReading  > 0 && tdsReading  < 2000) {          // valid TDS
+        latestTDS = tdsReading;
+        }
         latestTurbidity = readTurbidity();
         latestWaterLevel = readWaterLevelCM();
         latestFlowRate = readFlow();
+        phValue = readPH();
         uint32_t totalVolumeNow = getTotalVolume();
         uint32_t totalCount = getTotalPulses();
         
@@ -121,6 +130,7 @@ void loop() {
         Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
         Serial.printf("Total Volume: %.2f L\n", totalVolumeNow);
+        Serial.printf("pH Value: %.2f\n", phValue);
         Serial.print("Total Count: ");
         Serial.println(totalCount);
         Serial.printf("Solenoid State: %s\n", solenoidValue ? "ON" : "OFF");
@@ -143,7 +153,7 @@ void loop() {
             dashboardJson.add("waterLevel", latestWaterLevel);
 
             FirebaseJson qualityJson;
-            qualityJson.add("ph", 7.2);            // replace with sensor reading if available
+            qualityJson.add("ph", phValue);            // replace with sensor reading if available
             qualityJson.add("tds", latestTDS);
             qualityJson.add("turbidity", latestTurbidity);
 
