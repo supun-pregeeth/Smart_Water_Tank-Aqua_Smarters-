@@ -1,14 +1,18 @@
 #include <Arduino.h>
 #include "ph_sensor.h"
 
-#define PH_PIN 32   // adjust if using a different pin
+#define PH_PIN 35   // Analog pin for pH sensor
+
+void phInit() {
+    pinMode(PH_PIN, INPUT);
+}
 
 float readPH() {
-    int analogValue = analogRead(PH_PIN);
-    float voltage = analogValue * (3.3 / 4095.0);  // ESP32 ADC to voltage
+    int sensorValue = analogRead(PH_PIN);
+    float voltage = sensorValue * (3.3 / 4095.0);   // Convert raw ADC to voltage
 
-    // Basic formula (adjust with calibration later)
-    float phValue = (voltage * 3.5);  // simple conversion for typical pH sensors
+    // Basic pH formula (you can calibrate later)
+    float ph = 7 + ((2.5 - voltage) * 3.5);
 
-    return phValue;
+    return ph;
 }

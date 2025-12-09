@@ -2,90 +2,82 @@
 #include <Firebase_ESP_Client.h>
 #include "firebase_setup.h"
 
-// Firebase externs available via `firebase_setup.h`
+// -------------------- Configuration --------------------
+#define SOLENOID_ACTIVE_LOW true   // Set false if HIGH turns it ON
 
-// ---------------------------------------------------
-// Variables
-// ---------------------------------------------------
+// -------------------- Globals --------------------
 static int solenoidPin = -1;
-static bool solenoidState = false;  // 0 = OFF, 1 = ON
+static bool solenoidState = false;
 
-// ---------------------------------------------------
-// Initialization
-// ---------------------------------------------------
+// -------------------- Helper to set the GPIO --------------------
+static void writeSolenoid(bool turnOn) {
+
+    if (SOLENOID_ACTIVE_LOW) {
+        digitalWrite(solenoidPin, turnOn ? LOW : HIGH);
+    } else {
+        digitalWrite(solenoidPin, turnOn ? HIGH : LOW);
+    }
+
+    solenoidState = turnOn;
+}
+
+// -------------------- Init --------------------
 void solenoidInit(int pin) {
     solenoidPin = pin;
     pinMode(solenoidPin, OUTPUT);
-    digitalWrite(solenoidPin, LOW);
-    solenoidState = false;
-    Serial.println("Solenoid valve initialized.");
+    
+
+    // Start OFF
+    writeSolenoid(false);
+
+    Serial.print("Solenoid initialized on pin ");
+    Serial.println(solenoidPin);
 }
 
-// ---------------------------------------------------
-// ON / OFF Functions
-// ---------------------------------------------------
+// -------------------- Public API --------------------
 void solenoidOn() {
-    if (!solenoidState) {
-        digitalWrite(solenoidPin, HIGH);
-        solenoidState = true;
-        Serial.println("Solenoid turned ON locally");
-    }
+    writeSolenoid(true);
+    Serial.println("Solenoid ON");
 }
 
 void solenoidOff() {
-    if (solenoidState) {
-        digitalWrite(solenoidPin, LOW);
-        solenoidState = false;
-        Serial.println("Solenoid turned OFF locally");
-    }
+    writeSolenoid(false);
+    Serial.println("Solenoid OFF");
 }
 
-// ---------------------------------------------------
-// Return current state
-// ---------------------------------------------------
-bool getSolenoidState(void) {
+bool getSolenoidState() {
     return solenoidState;
 }
 
-// --------------------- ------------------------------
-// Firebase Remote Control
-// Reads valveStatus from dashboard every time this function is called
-// ---------------------------------------------------
+// -------------------- Firebase Control --------------------
 void solenoidFirebaseControl() {
     if (!signupOK || !Firebase.ready()) return;
 
-    String solenoidPath = "users/";
-    solenoidPath += String(USER_UID);
-    solenoidPath += "/dashboard/valveStatus";
-    Serial.print("Checking Firebase solenoid path: ");
-    Serial.println(solenoidPath);
+    String path = "users/";
+    path += String(USER_UID);
+    path += "/dashboard/valveStatus";
 
-    bool updated = false;
-
-    // Try to read as boolean
-    if (Firebase.RTDB.getBool(&fbdo, solenoidPath.c_str())) {
-        bool firebaseValue = fbdo.boolData();
-        Serial.print("Firebase valveStatus (bool): ");
-        Serial.println(firebaseValue ? "ON" : "OFF");
-
-        if (firebaseValue) solenoidOn();
-        else solenoidOff();
-        updated = true;
+    // Try boolean from Firebase
+    if (Firebase.RTDB.getBool(&fbdo, path.c_str())) {
+        bool value = fbdo.boolData();
+        value ? solenoidOn() : solenoidOff();
+        return;
     }
 
-    // If not boolean, try to read as string (some apps send "true"/"false")
-    if (!updated && Firebase.RTDB.getString(&fbdo, solenoidPath.c_str())) {
-        String firebaseStr = fbdo.stringData();
-        Serial.print("Firebase valveStatus (string): ");
-        Serial.println(firebaseStr);
+    // Try string (true/false, 1/0, on/off)
+    if (Firebase.RTDB.getString(&fbdo, path.c_str())) {
+        String s = fbdo.stringData();
+        s.toLowerCase();
 
-        if (firebaseStr.equalsIgnoreCase("true")) solenoidOn();
-        else solenoidOff();
-        updated = true;
+        if (s == "true" || s == "1" || s == "on")
+            solenoidOn();
+        else
+            solenoidOff();
+
+        return;
     }
 
-    if (!updated) {
-        Serial.print("Failed to read solenoid value: ");
-        Serial.println(fbdo.errorReason());
-    }
+    // Error reading
+    Serial.print("Solenoid Firebase read error: ");
+    Serial.println(fbdo.errorReason());
 }

@@ -3,7 +3,7 @@
 
 #define TRIG_PIN 26
 #define ECHO_PIN 27
-#define TANK_HEIGHT_CM 50  // change to your tank height
+#define TANK_HEIGHT_CM 47 // change to your tank height
 
 void ultrasonicInit();         // Initialize pins
 float readDistanceCM();        // Read distance from sensor
