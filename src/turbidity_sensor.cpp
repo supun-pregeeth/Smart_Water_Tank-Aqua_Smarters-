@@ -7,7 +7,9 @@ float readTurbidity() {
 
     int analogValue = analogRead(TURBIDITY_PIN);
     float voltage = analogValue * (3.3 / 4095.0);
-    float turbidityNTU = -1120.4 * voltage * voltage + 5742.3 * voltage - 4352.9;
+    float turbidityNTU = -11.4 * voltage * voltage + 574.3 * voltage - 43.9;
+
+    // Prevent negative turbidity
 
     return turbidityNTU;
 }

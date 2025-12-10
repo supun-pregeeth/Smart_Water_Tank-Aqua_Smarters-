@@ -19,17 +19,40 @@ const int daylightOffset_sec = 0;
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
 const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
-const unsigned long UPLOAD_INTERVAL = 5000;   // 5 seconds
+const unsigned long UPLOAD_INTERVAL = 2000;   // 5 seconds
 
 
 // -------------------- Sensor Values --------------------
 float latestTDS = 0.0;
-float latestTurbidity = 0.0;
+float latestTurbidity;
 float latestFlowRate = 0.0;   
 float totalVolume = 0.0;  
 float latestWaterLevel = 0.0;
 bool solenoidValue = false;
 float phValue = 0.0;
+
+
+
+String getTimestamp() {
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo)) {
+        return "Time Error";
+    }
+
+    char buffer[30];
+    sprintf(buffer, 
+        "%04d-%02d-%02d %02d:%02d:%02d",
+        timeinfo.tm_year + 1900,
+        timeinfo.tm_mon + 1,
+        timeinfo.tm_mday,
+        timeinfo.tm_hour,
+        timeinfo.tm_min,
+        timeinfo.tm_sec
+    );
+
+    return String(buffer);
+}
+
 
 void setupTime() {
     
@@ -71,6 +94,8 @@ void setup() {
     
     Serial.begin(115200);
     delay(500);
+
+    String nowTime = getTimestamp();
 
     Serial.println("------ SYSTEM START ------");
 
@@ -114,6 +139,12 @@ void loop() {
         if ( tdsReading  > 0 && tdsReading  < 2000) {          // valid TDS
         latestTDS = tdsReading;
         }
+
+        /* float turbidityReading = readTurbidity();
+        if ( turbidityReading  >= 0 && turbidityReading  < 1000) { // valid Turbidity
+        latestTurbidity = turbidityReading;
+        } */
+
         latestTurbidity = readTurbidity();
         latestWaterLevel = readWaterLevelCM();
         latestFlowRate = readFlow();
@@ -130,6 +161,7 @@ void loop() {
         Serial.printf("Water Level: %.2f cm\n", latestWaterLevel);
         Serial.printf("Flow Rate: %.2f L/min\n", latestFlowRate);
         Serial.printf("Total Volume: %.2f L\n", totalVolumeNow);
+        Serial.printf("Timestamp: %s\n", nowTime.c_str());
         Serial.printf("pH Value: %.2f\n", phValue);
         Serial.print("Total Count: ");
         Serial.println(totalCount);
@@ -157,9 +189,9 @@ void loop() {
             qualityJson.add("tds", latestTDS);
             qualityJson.add("turbidity", latestTurbidity);
 
-
-            /* json.add("total_volume", totalVolume);
-            json.add("total_pulses", getTotalPulses()); */
+            FirebaseJson usageJson;
+            usageJson.add("total_volume", totalVolume);
+            usageJson.add("timestamp", getTimestamp());
             
 
             String dashboardPath = "users/";
@@ -170,9 +202,15 @@ void loop() {
             qualityPath += String(USER_UID);
             qualityPath += "/quality";
 
+            String usagePath = "users/";
+            usagePath += String(USER_UID);
+            usagePath += "/usage";
+
             Serial.print("Uploading data to Firebase path: ");
             Serial.println(dashboardPath);
             Serial.println(qualityPath);
+            Serial.println(usagePath);
+
 
     if (Firebase.RTDB.setJSON(&fbdo, dashboardPath.c_str(), &dashboardJson)) {
         Serial.println("✅ Dashboard uploaded successfully!");
@@ -183,6 +221,15 @@ void loop() {
 
     if (Firebase.RTDB.setJSON(&fbdo, qualityPath.c_str(), &qualityJson)) {
         Serial.println("✅ Quality uploaded successfully!");
+
+    } else {
+         Serial.print("❌ Quality upload failed: ");
+        Serial.println(fbdo.errorReason());
+
+    }
+
+    if (Firebase.RTDB.setJSON(&fbdo, usagePath.c_str(), &usageJson)) {
+        Serial.println("✅ TotleVolume uploaded successfully!");
 
     } else {
          Serial.print("❌ Quality upload failed: ");
