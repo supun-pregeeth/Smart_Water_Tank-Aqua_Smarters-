@@ -11,5 +11,5 @@ float readTurbidity() {
 
     // Prevent negative turbidity
 
-    return turbidityNTU;
+    return turbidityNTU*0.05;
 }

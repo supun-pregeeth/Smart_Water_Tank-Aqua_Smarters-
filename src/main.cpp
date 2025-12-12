@@ -30,7 +30,7 @@ float totalVolume = 0.0;
 float latestWaterLevel = 0.0;
 bool solenoidValue = false;
 float phValue = 0.0;
-
+String nowTime = "";
 
 
 String getTimestamp() {
@@ -40,7 +40,8 @@ String getTimestamp() {
     }
 
     char buffer[30];
-    sprintf(buffer, 
+    // Format: YYYY-MM-DD HH:MM:SS
+    sprintf(buffer,
         "%04d-%02d-%02d %02d:%02d:%02d",
         timeinfo.tm_year + 1900,
         timeinfo.tm_mon + 1,
@@ -112,7 +113,7 @@ void setup() {
     flowSensorInit( 23,390.0);
 
     Serial.println("Step 5: Initializing solenoid valve...");
-    solenoidInit(16);
+    solenoidInit(22);
 
     Serial.println("Step 6: Initializing ultrasonic sensors...");
     ultrasonicInit();
@@ -190,6 +191,7 @@ void loop() {
             qualityJson.add("turbidity", latestTurbidity);
 
             FirebaseJson usageJson;
+            dashboardJson.add("flowRate", latestFlowRate);
             usageJson.add("total_volume", totalVolume);
             usageJson.add("timestamp", getTimestamp());
             
