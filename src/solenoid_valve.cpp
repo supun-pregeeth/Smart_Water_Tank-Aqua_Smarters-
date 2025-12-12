@@ -3,7 +3,7 @@
 #include "firebase_setup.h"
 
 // -------------------- Configuration --------------------
-#define SOLENOID_ACTIVE_LOW true   // Set false if HIGH turns it ON
+#define SOLENOID_ACTIVE_LOW  true   // Set false if HIGH turns it ON
 
 // -------------------- Globals --------------------
 static int solenoidPin = -1;
@@ -25,7 +25,6 @@ static void writeSolenoid(bool turnOn) {
 void solenoidInit(int pin) {
     solenoidPin = pin;
     pinMode(solenoidPin, OUTPUT);
-    
 
     // Start OFF
     writeSolenoid(false);

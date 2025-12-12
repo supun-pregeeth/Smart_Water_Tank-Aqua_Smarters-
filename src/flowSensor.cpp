@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 // --------- CONFIGURATION ---------
-uint8_t flowPin = 23;             // ESP32 pin connected to YF-S201 yellow wire
+ uint8_t flowPin = 23;             // ESP32 pin connected to YF-S201 yellow wire
 float calibrationFactor =390; // Pulses per liter (replace with your measured value)
 
 
@@ -49,7 +49,7 @@ float readFlow() {
     float freq = count * (1000.0f / dt);  
 
     // Flow rate in L/min
-    float flowRate = (freq / calibrationFactor) * 60.0;
+    float flowRate = (freq / calibrationFactor) * 11.5;
 
     // Accumulate total volume
     totalLiters += flowRate * (dt / 60000.0f);
