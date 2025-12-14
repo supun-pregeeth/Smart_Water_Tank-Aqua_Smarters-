@@ -17,7 +17,7 @@ float readDistanceCM() {
 
     long duration = pulseIn(ECHO_PIN, HIGH, 30000); // 30ms timeout
     
-    if (duration == 0) return -1; // no echo
+    if (duration == 0) return 0.0 ; // no echo
 
     float distance = duration * 0.0343 / 2.0; // cm
     return distance;
@@ -25,7 +25,7 @@ float readDistanceCM() {
 
 float readWaterLevelCM() {
     float distance = readDistanceCM();
-    if (distance < 0) return -1; // error
+    if (distance < 0) return 0.0 ; // error
 
     float level = TANK_HEIGHT_CM - distance;
     if (level < 0) level = 0;

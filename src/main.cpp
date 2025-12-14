@@ -18,8 +18,10 @@ const int daylightOffset_sec = 0;
 // -------------------- Sensor & Upload Timing --------------------
 unsigned long prevSensorMillis = 0;
 unsigned long prevUploadMillis = 0;
+
 const unsigned long SENSOR_INTERVAL = 1000;   // 1 second
-const unsigned long UPLOAD_INTERVAL = 2000;   // 5 seconds
+const unsigned long UPLOAD_INTERVAL = 2000;   // 2 seconds
+ // 0.5 second poll for faster response
 
 
 // -------------------- Sensor Values --------------------
@@ -39,13 +41,10 @@ String getTimestamp() {
         return "Time Error";
     }
 
-    char buffer[30];
+    char buffer[10];
     // Format: YYYY-MM-DD HH:MM:SS
     sprintf(buffer,
-        "%04d-%02d-%02d %02d:%02d:%02d",
-        timeinfo.tm_year + 1900,
-        timeinfo.tm_mon + 1,
-        timeinfo.tm_mday,
+        "%02d:%02d:%02d",
         timeinfo.tm_hour,
         timeinfo.tm_min,
         timeinfo.tm_sec
@@ -96,7 +95,7 @@ void setup() {
     Serial.begin(115200);
     delay(500);
 
-    String nowTime = getTimestamp();
+    nowTime = getTimestamp();
 
     Serial.println("------ SYSTEM START ------");
 
@@ -113,7 +112,7 @@ void setup() {
     flowSensorInit( 23,390.0);
 
     Serial.println("Step 5: Initializing solenoid valve...");
-    solenoidInit(22);
+    solenoidInit(13);
 
     Serial.println("Step 6: Initializing ultrasonic sensors...");
     ultrasonicInit();
@@ -126,15 +125,14 @@ void setup() {
 
 void loop() {
 
-    solenoidFirebaseControl();
-    solenoidValue = getSolenoidState();
     
     unsigned long currentMillis = millis();
 
-  
-    // --- Read sensors every 1 second ---
     if (currentMillis - prevSensorMillis >= SENSOR_INTERVAL) {
         prevSensorMillis = currentMillis;
+
+       /*  solenoidFirebaseControl();
+        solenoidValue = getSolenoidState(); */
 
         float tdsReading = readTDS();
         if ( tdsReading  > 0 && tdsReading  < 2000) {          // valid TDS
@@ -164,8 +162,6 @@ void loop() {
         Serial.printf("Total Volume: %.2f L\n", totalVolumeNow);
         Serial.printf("Timestamp: %s\n", nowTime.c_str());
         Serial.printf("pH Value: %.2f\n", phValue);
-        Serial.print("Total Count: ");
-        Serial.println(totalCount);
         Serial.printf("Solenoid State: %s\n", solenoidValue ? "ON" : "OFF");
         
         }
@@ -186,14 +182,14 @@ void loop() {
             dashboardJson.add("waterLevel", latestWaterLevel);
 
             FirebaseJson qualityJson;
-            qualityJson.add("ph", phValue);            // replace with sensor reading if available
+            qualityJson.add("ph", phValue); // replace with sensor reading if available
             qualityJson.add("tds", latestTDS);
             qualityJson.add("turbidity", latestTurbidity);
 
             FirebaseJson usageJson;
-            dashboardJson.add("flowRate", latestFlowRate);
+            usageJson.add("flowRate", latestFlowRate);
             usageJson.add("total_volume", totalVolume);
-            usageJson.add("timestamp", getTimestamp());
+            usageJson.add("time", getTimestamp());
             
 
             String dashboardPath = "users/";

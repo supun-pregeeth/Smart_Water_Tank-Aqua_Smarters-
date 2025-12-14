@@ -20,5 +20,5 @@ float readTDS() {
     if (tdsValue < 0) tdsValue = 0;
     if (tdsValue > 2000) tdsValue = 2000;
 
-    return tdsValue;
+    return tdsValue*3;
 }
