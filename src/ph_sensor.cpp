@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "ph_sensor.h"
 
-#define PH_PIN 35   // Analog pin for pH sensor
+#define PH_PIN 33   // Analog pin for pH sensor
 
 void phInit() {
     pinMode(PH_PIN, INPUT);
